@@ -1,13 +1,13 @@
 const axios = require('axios');
-const knex = require('knex');
-const bcrypt = require('bcryptjs');
-const cors = require('cors');
-const knexConfig = require('../knexfile.js');
-const db = knex(knexConfig.development);
-const jwt = require('jsonwebtoken');
-const { authenticate } = require('./middlewares');
+const { authenticate, tokenGenerator } = require('../auth/aunthenticate');
 
-const secret = 'I want a girl with a short skirt and a looooooooooooooooooooooooooooooooooooong secret!'
+const bcrypt = require('bcryptjs');
+//const cors = require('cors');
+
+const db = require('../database/dbConfig');
+//const jwt = require('jsonwebtoken');
+
+
 
 
 module.exports = server => {
@@ -15,15 +15,6 @@ module.exports = server => {
   server.post('/api/login', login);
   server.get('/api/jokes', authenticate, getJokes);
 };
-function tokenGenerator(user){
-  const payload ={
-    username: user.username
-  }
-  const options = {
-    expiresIn : '1h'
-  }
-  return jwt.sign(payload,secret,options)
-}
 
 
 function register(req, res) {
@@ -32,7 +23,14 @@ function register(req, res) {
   newUserCreds.password = hashedPass;
   db('users').insert(newUserCreds)
     .then(ids =>{
-        res.status(201).json(ids)
+        const id = ids[0];
+        db('users')
+          .where({id})
+          .first()
+          .then(user => {
+            const token = tokenGenerator(user);
+            res.status(201).json({user, token})
+          })
     })
     .catch(() =>{
       res.status(500).json({message: 'Sorry, could not register new user'})
@@ -46,7 +44,7 @@ function login(req, res) {
     .then(user =>{
       if(user && bcrypt.compareSync(userCreds.password, user.password)){
           const token = tokenGenerator(user);
-          res.status(201).json({message: 'Successful combination of usename and passcode', token})
+          res.status(200).json({message: 'Successful combination of usename and passcode', token})
       }else{
         res.status(401).json({message: 'Invalid username and passcode'})
       }
@@ -57,6 +55,11 @@ function login(req, res) {
 }
 
 function getJokes(req, res) {
+  const requestOptions = {
+    headers: { accept: 'application/json' },
+   
+  };
+
   axios
     .get('https://safe-falls-22549.herokuapp.com/random_ten')
     .then(response => {
