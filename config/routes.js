@@ -1,6 +1,7 @@
 const axios = require('axios');
 const knex = require('knex');
 const bcrypt = require('bcryptjs');
+const cors = require('cors');
 const knexConfig = require('../knexfile.js');
 const db = knex(knexConfig.development);
 const jwt = require('jsonwebtoken');
@@ -8,14 +9,15 @@ const { authenticate } = require('./middlewares');
 
 const secret = 'I want a girl with a short skirt and a looooooooooooooooooooooooooooooooooooong secret!'
 
+
 module.exports = server => {
   server.post('/api/register', register);
   server.post('/api/login', login);
   server.get('/api/jokes', authenticate, getJokes);
 };
-function tokenGenerator(username){
+function tokenGenerator(user){
   const payload ={
-    username
+    username: user.username
   }
   const options = {
     expiresIn : '1h'
