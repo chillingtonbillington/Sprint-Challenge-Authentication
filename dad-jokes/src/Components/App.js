@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
+
 import '../css/App.css';
 import {Route, NavLink } from 'react-router-dom';
 import SignIn from './SignIn';
